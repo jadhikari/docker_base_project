@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./project_backend
+      dockerfile: Dockerfile
+      target: development  # ✅ Explicitly use the development stage
+    container_name: django-backend-dev
+    volumes:
+      - ./project_backend:/app
+    ports:
+      - "8000:8000"
+    env_file: .env.dev
+    depends_on:
+      - postgres
+    command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]  # ✅ Override to force development mode
+    environment:
+      - DJANGO_SETTINGS_MODULE=project_backend.settings
+      - PYTHONUNBUFFERED=1
+      - DJANGO_ENV_FILE=.env.dev
+
+  postgres:
+    image: postgres:15
+    container_name: postgres-db-dev
+    restart: always
+    ports:
+      - "5432:5432"
+    env_file: .env.dev  # Load environment variables from .env.dev
+    volumes:
+      - postgres-db-dev:/var/lib/postgresql/data
+      - ./config/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./config/pg_hba.conf:/etc/postgresql/pg_hba.conf
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+
+
+volumes:
+  postgres-db-dev:
+    name: solar_project_postgres_data

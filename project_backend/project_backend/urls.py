@@ -14,9 +14,25 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
+from django.views.generic.base import RedirectView
 
 urlpatterns = [
-    path('manoj/', admin.site.urls),
+    path('solar-api/admin/', admin.site.urls),
+    
+    # FIX: Ensure correct schema URL
+    path('solar-api/schema/', SpectacularAPIView.as_view(), name='api-schema'),
+    
+    # FIX: Ensure the Swagger UI references the correct schema
+    path('solar-api/docs/', SpectacularSwaggerView.as_view(url_name='api-schema'), name='api-docs'),
+
+    # Redirect default API path to documentation
+    path('', RedirectView.as_view(url='/solar-api/docs/', permanent=False), name='index'),
+
+    # Other API routes
+    path('solar-api/user/', include('user.urls')),
+    path('solar-api/core/', include('core.urls')),
 ]
+
