@@ -28,6 +28,7 @@ services:
 
   postgres:
     image: postgres:15
+    pull_policy: if_not_present
     container_name: postgres-db-prod
     restart: always
     ports:
@@ -41,6 +42,7 @@ services:
 
   nginx:
     image: nginx
+    pull_policy: if_not_present
     container_name: nginx-prod
     ports:
       - "8443:8443"

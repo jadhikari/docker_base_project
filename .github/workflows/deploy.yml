@@ -1,0 +1,51 @@
+name: Deploy Django with Nginx & PostgreSQL
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry (GHCR)
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_PAT }}  # Use Personal Access Token
+
+      - name: Deploy on Server
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.SERVER_IP }} #set this isn git hub
+          username: ${{ secrets.SERVER_USER }} #set this isn git hub
+          key: ${{ secrets.SSH_PRIVATE_KEY }} # set this isn git hub
+          script: |
+            cd /home/ubuntu/docker_base_solar_project
+            git pull origin master
+            
+            # Stop and remove existing containers
+            sudo docker-compose -f docker-compose.prod.yml down
+
+            # Remove old images (optional, to free space)
+            sudo docker system prune -af
+
+            # Start new containers (Docker Compose will handle pulling and building)
+            sudo docker-compose -f docker-compose.prod.yml up --build -d
+
+            # Wait for services to start
+            sleep 10
+
+            # Run Django management commands inside the Django container
+            sudo docker exec django-backend-prod pip install -r /app/requirements.txt
+            sudo docker exec django-backend-prod python manage.py migrate --noinput
+            sudo docker exec django-backend-prod python manage.py collectstatic --noinput
+
+            # Restart Django container to apply updates
+            sudo docker restart django-backend-prod

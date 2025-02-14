@@ -22,6 +22,7 @@ services:
 
   postgres:
     image: postgres:15
+    pull_policy: if_not_present
     container_name: postgres-db-dev
     restart: always
     ports:
